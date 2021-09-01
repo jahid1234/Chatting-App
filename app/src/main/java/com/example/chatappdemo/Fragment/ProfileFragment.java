@@ -48,7 +48,7 @@ public class ProfileFragment extends Fragment {
 
     DatabaseReference reference;
     FirebaseUser fuser;
-
+    ValueEventListener imageloadListener;
     StorageReference storageReference;
     private static final int IMAGE_REQUEST = 1;
     private Uri imageUri;
@@ -66,15 +66,17 @@ public class ProfileFragment extends Fragment {
         fuser = FirebaseAuth.getInstance().getCurrentUser();
         reference = FirebaseDatabase.getInstance().getReference("Users").child(fuser.getUid());
 
-        reference.addValueEventListener(new ValueEventListener() {
+        imageloadListener = reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                User user = snapshot.getValue(User.class);
-                username.setText(user.getUsername());
-                if (user.getImageURL().equals("default")){
-                    image_profile.setImageResource(R.mipmap.ic_launcher);
-                } else {
-                    Glide.with(getContext()).load(user.getImageURL()).into(image_profile);
+                if(isAdded()) {
+                    User user = snapshot.getValue(User.class);
+                    username.setText(user.getUsername());
+                    if (user.getImageURL().equals("default")) {
+                        image_profile.setImageResource(R.mipmap.ic_launcher);
+                    } else {
+                        Glide.with(getContext()).load(user.getImageURL()).into(image_profile);
+                    }
                 }
             }
 
@@ -174,6 +176,11 @@ public class ProfileFragment extends Fragment {
 
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        reference.removeEventListener(imageloadListener);
+    }
 }
 
 

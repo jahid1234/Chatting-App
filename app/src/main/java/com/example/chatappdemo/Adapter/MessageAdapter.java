@@ -52,13 +52,25 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
     public void onBindViewHolder(@NonNull MessageAdapter.ViewHolder holder, int position) {
         Chat chat = mChat.get(position);
 
-        holder.show_message.setText(chat.getMessage());
+        if(!chat.getMessage().equals("default")) {
+            holder.show_message.setText(chat.getMessage());
+            holder.imageView.setVisibility(View.GONE);
+        }else{
+            Glide.with(mContext).load(chat.getImageMessage()).into(holder.imageView);
+            holder.show_message.setVisibility(View.GONE);
+        }
 
         if (imageurl.equals("default")){
             holder.profile_image.setImageResource(R.mipmap.ic_launcher);
         } else {
             Glide.with(mContext).load(imageurl).into(holder.profile_image);
         }
+        if(position == mChat.size()-1){
+            holder.txt_time.setText(chat.getTime());
+        }else{
+            holder.txt_time.setVisibility(View.GONE);
+        }
+
 
         if (position == mChat.size()-1){
             if (chat.isIsseen()){
@@ -81,14 +93,16 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
         public TextView show_message;
         public ImageView profile_image;
         public TextView txt_seen;
-
-
+        public TextView txt_time;
+        public ImageView imageView;
         public ViewHolder(View itemView) {
             super(itemView);
 
             show_message = itemView.findViewById(R.id.show_message);
             profile_image = itemView.findViewById(R.id.profile_image);
             txt_seen = itemView.findViewById(R.id.txt_seen);
+            txt_time = itemView.findViewById(R.id.txt_time);
+            imageView = itemView.findViewById(R.id.show_image_msg);
         }
     }
 

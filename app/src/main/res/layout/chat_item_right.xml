@@ -29,12 +29,39 @@
             android:padding="8dp"
             android:layout_alignParentRight="true" />
 
+        <ImageView
+            android:id="@+id/show_image_msg"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/profile_image"
+            android:layout_marginLeft="5dp"
+            android:layout_below="@+id/show_message"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:padding="8dp"
+            >
+
+        </ImageView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@+id/show_image_msg"
+            android:layout_marginLeft="5dp"
+            android:text="time"
+            android:textSize="10sp"
+            android:id="@+id/txt_time"
+            android:padding="1dp"
+            android:layout_alignParentRight="true"
+            android:textColor="@android:color/black"/>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/txt_seen"
             android:text="seen"
-            android:layout_below="@id/show_message"
+            android:layout_below="@id/txt_time"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true" />
 

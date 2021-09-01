@@ -13,7 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.example.chatappdemo.MessageActivity;
+import com.example.chatappdemo.Activities.MessageActivity;
 import com.example.chatappdemo.Model.Chat;
 import com.example.chatappdemo.Model.User;
 import com.example.chatappdemo.R;
@@ -141,17 +141,24 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                     last_msg.setText("");
                 }else{
                     if(isSeen){
-                        last_msg.setText(theLastMessage);
+                        if(theLastMessage.equals("default")){
+                            last_msg.setText("Media File");
+                        }else{
+                            last_msg.setText(theLastMessage);
+                        }
                     }else {
 //                        assert firebaseUser != null;
-                        last_msg.setText(theLastMessage);
+                        if(theLastMessage.equals("default")){
+                            last_msg.setText("Media File");
+                        }else{
+                            last_msg.setText(theLastMessage);
+                        }
                         if(firebaseUser != null) {
                             if(msgReceiver.equals(firebaseUser.getUid())){
                                 last_msg.setTypeface(null, Typeface.BOLD);
+                                last_msg.setTextSize(15);
                             }
                         }
-
-
                     }
 
                 }

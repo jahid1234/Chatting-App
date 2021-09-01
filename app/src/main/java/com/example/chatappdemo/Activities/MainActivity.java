@@ -1,4 +1,4 @@
-package com.example.chatappdemo;
+package com.example.chatappdemo.Activities;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,8 +20,8 @@ import com.example.chatappdemo.Fragment.ChatsFragment;
 import com.example.chatappdemo.Fragment.ProfileFragment;
 import com.example.chatappdemo.Fragment.UsersFragment;
 import com.example.chatappdemo.Model.Chat;
-import com.example.chatappdemo.Model.Chatlist;
 import com.example.chatappdemo.Model.User;
+import com.example.chatappdemo.R;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -34,7 +34,6 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -115,11 +114,11 @@ public class MainActivity extends AppCompatActivity {
                 int unread = 0;
                 arrayListHashSet.clear();
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()){
-                    String sender = String.valueOf(dataSnapshot.child("sender").getValue());
+                  //  String sender = String.valueOf(dataSnapshot.child("sender").getValue());
 
                     Chat chat = snapshot.getValue(Chat.class);
                     if (chat.getReceiver().equals(firebaseUser.getUid()) && !chat.isIsseen()){
-                        //unread++;
+                       // unread++;
                        arrayListHashSet.add(chat.getSender());
                       // booleanHashSetForSeen.add(chat.isIsseen());
                     }
