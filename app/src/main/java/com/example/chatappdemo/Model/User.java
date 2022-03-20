@@ -5,11 +5,13 @@ public class User {
     private String username;
     private String imageURL;
     private String status;
+    boolean isAddedToGroup;
     public User(String id, String username, String imageURL,String status) {
         this.id = id;
         this.username = username;
         this.imageURL = imageURL;
         this.status = status;
+        isAddedToGroup = false;
     }
 
     public User() {
@@ -45,5 +47,13 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public void setAddedToGroup(boolean addedToGroup) {
+        isAddedToGroup = addedToGroup;
+    }
+
+    public boolean isAddedToGroup() {
+        return isAddedToGroup;
     }
 }

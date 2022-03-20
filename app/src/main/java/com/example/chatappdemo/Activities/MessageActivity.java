@@ -69,7 +69,7 @@ public class MessageActivity extends AppCompatActivity {
 
     CircleImageView profile_image;
     TextView username;
-    ImageButton btn_send,sendImageMsg;
+    ImageButton btn_send, sendImageMsg;
     EditText text_send;
 
     MessageAdapter messageAdapter;
@@ -91,6 +91,8 @@ public class MessageActivity extends AppCompatActivity {
     private Uri imageUri;
     byte[] x;
     private StorageTask uploadTask;
+    final String chatType = "singleChat";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -119,6 +121,7 @@ public class MessageActivity extends AppCompatActivity {
 
         intent = getIntent();
         userid = intent.getStringExtra("userid");
+        //  chatType = intent.getStringExtra("chatType");
         fuser = FirebaseAuth.getInstance().getCurrentUser();
 
         recyclerView = findViewById(R.id.recycler_view);
@@ -132,8 +135,10 @@ public class MessageActivity extends AppCompatActivity {
             public void onClick(View view) {
                 notify = true;
                 String msg = text_send.getText().toString();
-                if (!msg.equals("")){
-                    sendMessage(fuser.getUid(), userid, msg,"default");
+                if (!msg.equals("")) {
+
+                    sendMessage(fuser.getUid(), userid, msg, "noimage");
+
                 } else {
                     Toast.makeText(MessageActivity.this, "You can't send empty message", Toast.LENGTH_SHORT).show();
                 }
@@ -158,7 +163,7 @@ public class MessageActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 User user = snapshot.getValue(User.class);
                 username.setText(user.getUsername());
-                if (user.getImageURL().equals("default")){
+                if (user.getImageURL().equals("default")) {
                     profile_image.setImageResource(R.mipmap.ic_launcher);
                 } else {
                     //and this
@@ -174,16 +179,17 @@ public class MessageActivity extends AppCompatActivity {
             }
         });
         seenMessage(userid);
+
     }
 
-    private void seenMessage(String userid){
+    private void seenMessage(String userid) {
         reference = FirebaseDatabase.getInstance().getReference("Chats");
         seenListener = reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()){
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     Chat chat = snapshot.getValue(Chat.class);
-                    if (chat.getReceiver().equals(fuser.getUid()) && chat.getSender().equals(userid)){
+                    if (chat.getReceiver().equals(fuser.getUid()) && chat.getSender().equals(userid)) {
                         HashMap<String, Object> hashMap = new HashMap<>();
                         hashMap.put("isseen", true);
                         snapshot.getRef().updateChildren(hashMap);
@@ -197,11 +203,12 @@ public class MessageActivity extends AppCompatActivity {
             }
         });
     }
-    private void sendMessage(String sender, final String receiver, String message,String imageMessage){
+
+    private void sendMessage(String sender, final String receiver, String message, String imageMessage) {
         String time = "mm.ss.yy";
         Date dateTime = Calendar.getInstance().getTime();
 
-        time = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT,SimpleDateFormat.SHORT).format(dateTime);
+        time = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.SHORT).format(dateTime);
 
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference("Chats");
 
@@ -209,11 +216,13 @@ public class MessageActivity extends AppCompatActivity {
         hashMap.put("sender", sender);
         hashMap.put("receiver", receiver);
         hashMap.put("message", message);
-        hashMap.put("imageMessage",imageMessage);
-        hashMap.put("time",time);
+        hashMap.put("imageMessage", imageMessage);
+        hashMap.put("time", time);
         hashMap.put("isseen", false);
+        hashMap.put("deleteBySender", false);
+        hashMap.put("deleteByReceiver", false);
 
-       // reference.child("Chats").push().setValue(hashMap);
+        // reference.child("Chats").push().setValue(hashMap);
         reference.push().setValue(hashMap);
 
         final DatabaseReference chatRef = FirebaseDatabase.getInstance().getReference("Chatlist")
@@ -223,7 +232,7 @@ public class MessageActivity extends AppCompatActivity {
         chatRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (!dataSnapshot.exists()){
+                if (!dataSnapshot.exists()) {
                     chatRef.child("id").setValue(userid);
                 }
             }
@@ -241,7 +250,7 @@ public class MessageActivity extends AppCompatActivity {
         chatRefReceiver.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (!dataSnapshot.exists()){
+                if (!dataSnapshot.exists()) {
                     chatRefReceiver.child("id").setValue(fuser.getUid());
                 }
             }
@@ -274,16 +283,16 @@ public class MessageActivity extends AppCompatActivity {
 
     }
 
-    private void sendNotification(String receiver, final String username, final String message){
+    private void sendNotification(String receiver, final String username, final String message) {
 
         DatabaseReference tokens = FirebaseDatabase.getInstance().getReference("Tokens");
         Query query = tokens.orderByKey().equalTo(receiver);
         query.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()){
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     Token token = snapshot.getValue(Token.class);
-                    Data data = new Data(fuser.getUid(), R.mipmap.ic_launcher, username+": "+message, "New Message",
+                    Data data = new Data(fuser.getUid(), R.mipmap.ic_launcher, username + ": " + message, "New Message",
                             userid);
 
                     Sender sender = new Sender(data, token.getToken());
@@ -292,8 +301,8 @@ public class MessageActivity extends AppCompatActivity {
                             .enqueue(new Callback<MyResponse>() {
                                 @Override
                                 public void onResponse(Call<MyResponse> call, Response<MyResponse> response) {
-                                    if (response.code() == 200){
-                                        if (response.body().success != 1){
+                                    if (response.code() == 200) {
+                                        if (response.body().success != 1) {
                                             Toast.makeText(MessageActivity.this, "Failed!", Toast.LENGTH_SHORT).show();
                                         }
                                     }
@@ -315,8 +324,7 @@ public class MessageActivity extends AppCompatActivity {
     }
 
 
-
-    private void readMessages(final String myid, final String userid, final String imageurl){
+    private void readMessages(final String myid, final String userid, final String imageurl) {
         mchat = new ArrayList<>();
 
         reference = FirebaseDatabase.getInstance().getReference("Chats");
@@ -325,17 +333,23 @@ public class MessageActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 mchat.clear();
-                for (DataSnapshot snapshot1 : snapshot.getChildren()){
-                    Chat chat = snapshot1.getValue(Chat.class);
-                    if (chat.getReceiver().equals(myid) && chat.getSender().equals(userid) ||
-                            chat.getReceiver().equals(userid) && chat.getSender().equals(myid)){
-                        mchat.add(chat);
-                    }
+                if (snapshot.exists()) {
+                    for (DataSnapshot snapshot1 : snapshot.getChildren()) {
+
+                        Chat chat = snapshot1.getValue(Chat.class);
+                        if (chat.getReceiver().equals(myid) && chat.getSender().equals(userid) && !chat.isDeleteByReceiver() ||
+                                chat.getReceiver().equals(userid) && chat.getSender().equals(myid) && !chat.isDeleteBySender()) {
+                            chat.setKey(snapshot1.getKey());
+                            mchat.add(chat);
+                        }
 //                    messageAdapter = new MessageAdapter(MessageActivity.this, mchat, imageurl);
 //                    recyclerView.setAdapter(messageAdapter);
+                    }
                 }
-                messageAdapter = new MessageAdapter(MessageActivity.this, mchat, imageurl);
+
+                messageAdapter = new MessageAdapter(MessageActivity.this, mchat, imageurl,chatType);
                 recyclerView.setAdapter(messageAdapter);
+                messageAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -345,7 +359,7 @@ public class MessageActivity extends AppCompatActivity {
         });
     }
 
-    private void status(String status){
+    private void status(String status) {
         reference = FirebaseDatabase.getInstance().getReference("Users").child(fuser.getUid());
 
         HashMap<String, Object> hashMap = new HashMap<>();
@@ -354,7 +368,7 @@ public class MessageActivity extends AppCompatActivity {
         reference.updateChildren(hashMap);
     }
 
-    private void currentUser(String userid){
+    private void currentUser(String userid) {
         SharedPreferences.Editor editor = getSharedPreferences("PREFS", MODE_PRIVATE).edit();
         editor.putString("currentuser", userid);
         editor.apply();
@@ -370,9 +384,11 @@ public class MessageActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+
         reference.removeEventListener(seenListener);
         status("offline");
         currentUser("none");
+
     }
 
     private void openImage() {
@@ -382,7 +398,7 @@ public class MessageActivity extends AppCompatActivity {
         startActivityForResult(intent, IMAGE_REQUEST);
     }
 
-    private String getFileExtension(Uri uri){
+    private String getFileExtension(Uri uri) {
         ContentResolver contentResolver = getApplicationContext().getContentResolver();
         MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
         return mimeTypeMap.getExtensionFromMimeType(contentResolver.getType(uri));
@@ -393,14 +409,14 @@ public class MessageActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == IMAGE_REQUEST && resultCode == RESULT_OK
-                && data != null && data.getData() != null){
+                && data != null && data.getData() != null) {
             imageUri = data.getData();
-           // File file_path = new File(imageUri.getPath());
+            // File file_path = new File(imageUri.getPath());
             try {
 
-               Bitmap selectedImageBitmap =  MediaStore.Images.Media.getBitmap(getContentResolver(),imageUri);
-               ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-               selectedImageBitmap.compress(Bitmap.CompressFormat.JPEG,5,outputStream);
+                Bitmap selectedImageBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                selectedImageBitmap.compress(Bitmap.CompressFormat.JPEG, 5, outputStream);
                 x = outputStream.toByteArray();
 
             } catch (IOException e) {
@@ -408,7 +424,7 @@ public class MessageActivity extends AppCompatActivity {
             }
 
 
-            if (uploadTask != null && uploadTask.isInProgress()){
+            if (uploadTask != null && uploadTask.isInProgress()) {
                 Toast.makeText(MessageActivity.this, "Upload in progress", Toast.LENGTH_SHORT).show();
             } else {
                 uploadImage();
@@ -416,30 +432,30 @@ public class MessageActivity extends AppCompatActivity {
         }
     }
 
-    private void uploadImage(){
+    private void uploadImage() {
         final ProgressDialog pd = new ProgressDialog(MessageActivity.this);
         pd.setMessage("Uploading");
         pd.show();
 
-        if(imageUri != null){
-            final  StorageReference fileReference = storageReference.child(System.currentTimeMillis()
-                    +".JPEG");
+        if (imageUri != null) {
+            final StorageReference fileReference = storageReference.child(System.currentTimeMillis()
+                    + ".JPEG");
 
-         //   uploadTask = fileReference.putFile(imageUri);
+            //   uploadTask = fileReference.putFile(imageUri);
             uploadTask = fileReference.putBytes(x);
-            uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>(){
+            uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
 
                 @Override
                 public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                    if (!task.isSuccessful()){
-                        throw  task.getException();
+                    if (!task.isSuccessful()) {
+                        throw task.getException();
                     }
-                    return  fileReference.getDownloadUrl();
+                    return fileReference.getDownloadUrl();
                 }
             }).addOnCompleteListener(new OnCompleteListener<Uri>() {
                 @Override
                 public void onComplete(@NonNull Task<Uri> task) {
-                    if (task.isSuccessful()){
+                    if (task.isSuccessful()) {
                         Uri downloadUri = task.getResult();
                         String mUri = downloadUri.toString();
 
@@ -447,7 +463,7 @@ public class MessageActivity extends AppCompatActivity {
 //                        HashMap<String, Object> map = new HashMap<>();
 //                        map.put("imageURL", ""+mUri);
 //                        reference.updateChildren(map);
-                        sendMessage(fuser.getUid(), userid,"default",mUri);
+                        sendMessage(fuser.getUid(), userid, "nomsg", mUri);
                         pd.dismiss();
                     } else {
                         Toast.makeText(MessageActivity.this, "Failed!", Toast.LENGTH_SHORT).show();
@@ -462,7 +478,7 @@ public class MessageActivity extends AppCompatActivity {
                 }
             });
 
-        }else{
+        } else {
             Toast.makeText(MessageActivity.this, "No image selected", Toast.LENGTH_SHORT).show();
         }
 

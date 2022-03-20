@@ -1,12 +1,6 @@
 package com.example.chatappdemo.Fragment;
 
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -14,7 +8,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.chatappdemo.Activities.GroupMessageActivity;
+import com.example.chatappdemo.Adapter.GroupListAdapter;
 import com.example.chatappdemo.Adapter.UserAdapter;
+import com.example.chatappdemo.Model.GroupList;
 import com.example.chatappdemo.Model.User;
 import com.example.chatappdemo.R;
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,15 +34,16 @@ import java.util.List;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class UsersFragment extends Fragment {
+public class GroupFragment extends Fragment {
 
     private RecyclerView recyclerView;
 
-    private UserAdapter userAdapter;
-    private List<User> mUsers;
+    private GroupListAdapter groupListAdapter;
+    private List<GroupList> mGroupLists;
+
 
     EditText search_users;
-    public UsersFragment() {
+    public GroupFragment() {
         // Required empty public constructor
     }
 
@@ -48,15 +51,16 @@ public class UsersFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_users, container, false);
+        View view = inflater.inflate(R.layout.fragment_group, container, false);
 
         recyclerView = view.findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        mUsers = new ArrayList<>();
+        mGroupLists = new ArrayList<>();
 
-        readUsers();
+
+        readGroups();
 
         search_users = view.findViewById(R.id.search_users);
         search_users.addTextChangedListener(new TextWatcher() {
@@ -67,7 +71,7 @@ public class UsersFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                searchUsers(charSequence.toString().toLowerCase());
+                searchGroups(charSequence.toString().toLowerCase());
             }
 
             @Override
@@ -78,25 +82,28 @@ public class UsersFragment extends Fragment {
         return view;
     }
 
-    private void readUsers() {
-        final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("Users");
+    private void readGroups() {
+
+        final  FirebaseUser  firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("grouplist");
 
         reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(search_users.getText().toString().equals("")) {
-                    mUsers.clear();
+                    mGroupLists.clear();
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        User user = snapshot.getValue(User.class);
+                        GroupList groupList = snapshot.getValue(GroupList.class);
 
-                        if (!user.getId().equals(firebaseUser.getUid())) {
-                            mUsers.add(user);
+                        if (groupList.getCreatormember().equals(firebaseUser.getUid()) || groupList.getMember0().equals(firebaseUser.getUid())
+                            || groupList.getMember1().equals(firebaseUser.getUid()) || groupList.getMember2().equals(firebaseUser.getUid())) {
+                            mGroupLists.add(groupList);
                         }
                     }
 
-                    userAdapter = new UserAdapter(getContext(), mUsers, true,false,false);
-                    recyclerView.setAdapter(userAdapter);
+                    groupListAdapter = new GroupListAdapter(getContext(), mGroupLists);
+                    recyclerView.setAdapter(groupListAdapter);
+                    groupListAdapter.notifyDataSetChanged();
                 }
             }
 
@@ -107,27 +114,29 @@ public class UsersFragment extends Fragment {
         });
     }
 
-    private void searchUsers(String s){
+    private void searchGroups(String s){
         final FirebaseUser fuser = FirebaseAuth.getInstance().getCurrentUser();
-        Query query = FirebaseDatabase.getInstance().getReference("Users").orderByChild("search")
+        Query query = FirebaseDatabase.getInstance().getReference("grouplist").orderByChild("search")
                 .startAt(s)
                 .endAt(s+"\uf8ff");
         query.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                mUsers.clear();
+                mGroupLists.clear();
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()){
-                    User user = snapshot.getValue(User.class);
+                    GroupList groupList = snapshot.getValue(GroupList.class);
 
-                    assert user != null;
+                    assert groupList != null;
                     assert fuser != null;
-                    if (!user.getId().equals(fuser.getUid())){
-                        mUsers.add(user);
+                    if (groupList.getCreatormember().equals(fuser.getUid()) || groupList.getMember0().equals(fuser.getUid())
+                            || groupList.getMember1().equals(fuser.getUid()) || groupList.getMember2().equals(fuser.getUid())){
+                        mGroupLists.add(groupList);
                     }
                 }
 
-                userAdapter = new UserAdapter(getContext(), mUsers, true,false,false);
-                recyclerView.setAdapter(userAdapter);
+                groupListAdapter = new GroupListAdapter(getContext(), mGroupLists);
+                recyclerView.setAdapter(groupListAdapter);
+                groupListAdapter.notifyDataSetChanged();
             }
 
             @Override

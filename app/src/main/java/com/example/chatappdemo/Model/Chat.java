@@ -8,18 +8,42 @@ public class Chat {
     private String imageMessage;
     private String time;
     private boolean isseen;
-    public Chat(String sender, String receiver, String message,String imageMessage,String time,boolean isseen) {
+    private boolean deleteBySender;
+    private boolean deleteByReceiver;
+
+    private String key;
+    public Chat(String sender, String receiver, String message,String imageMessage,String time,boolean isseen,boolean deleteBySender,boolean
+                deleteByReceiver) {
         this.sender = sender;
         this.receiver = receiver;
         this.message = message;
         this.imageMessage = imageMessage;
         this.time   = time;
         this.isseen = isseen;
+        this.deleteBySender = deleteBySender;
+        this.deleteByReceiver = deleteByReceiver;
     }
 
     public Chat (){
 
     }
+
+    public boolean isDeleteBySender() {
+        return deleteBySender;
+    }
+
+    public boolean isDeleteByReceiver() {
+        return deleteByReceiver;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public String getSender() {
         return sender;
     }

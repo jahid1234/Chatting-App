@@ -37,12 +37,14 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     boolean isSeen = false;
     String msgReceiver;
     String fUser;
+    boolean isCreateGroup;
 
-    public UserAdapter(Context mContext, List<User> mUsers,boolean ischat,boolean isLastMsgShow){
+    public UserAdapter(Context mContext, List<User> mUsers,boolean ischat,boolean isLastMsgShow,boolean isCreateGroup){
         this.mUsers = mUsers;
         this.mContext = mContext;
         this.ischat = ischat;
         this.isLastMsgShow = isLastMsgShow;
+        this.isCreateGroup = isCreateGroup;
 
     }
     @NonNull
@@ -62,14 +64,36 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             Glide.with(mContext).load(user.getImageURL()).into(holder.profile_image);
         }
 
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(mContext, MessageActivity.class);
-                intent.putExtra("userid", user.getId());
-                mContext.startActivity(intent);
+        if(!isCreateGroup) {
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(mContext, MessageActivity.class);
+                    intent.putExtra("userid", user.getId());
+                   // intent.putExtra("chatType","singleChat");
+                    mContext.startActivity(intent);
+                }
+            });
+        }else{
+            if(user.isAddedToGroup()){
+                holder.img_select.setVisibility(View.VISIBLE);
+            }else {
+                holder.img_select.setVisibility(View.GONE);
             }
-        });
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if(holder.img_select.getVisibility() == view.GONE) {
+                        holder.img_select.setVisibility(View.VISIBLE);
+                        user.setAddedToGroup(true);
+                    }else if(holder.img_select.getVisibility() == view.VISIBLE){
+                        holder.img_select.setVisibility(View.GONE);
+                        user.setAddedToGroup(false);
+                    }
+                }
+            });
+
+        }
 
         if(isLastMsgShow){
             lastMessage(user.getId(),holder.last_msg);
@@ -102,7 +126,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         private ImageView img_on;
         private ImageView img_off;
         private TextView last_msg;
-
+        private ImageView img_select;
         public ViewHolder(View itemView) {
             super(itemView);
 
@@ -112,7 +136,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             img_on = itemView.findViewById(R.id.img_on);
             img_off = itemView.findViewById(R.id.img_off);
             last_msg = itemView.findViewById(R.id.last_msg);
-
+            img_select = itemView.findViewById(R.id.img_select);
         }
     }
 
@@ -129,26 +153,26 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()){
                     Chat chat = snapshot.getValue(Chat.class);
                     if (firebaseUser != null && chat != null) {
-                        if (chat.getReceiver().equals(firebaseUser.getUid()) && chat.getSender().equals(userid) ||
-                                chat.getReceiver().equals(userid) && chat.getSender().equals(firebaseUser.getUid())) {
+                        if (chat.getReceiver().equals(firebaseUser.getUid()) && chat.getSender().equals(userid) && !chat.isDeleteByReceiver()||
+                                chat.getReceiver().equals(userid) && chat.getSender().equals(firebaseUser.getUid()) && !chat.isDeleteBySender()) {
                             theLastMessage = chat.getMessage();
                             isSeen = chat.isIsseen();
                             msgReceiver = chat.getReceiver();
                         }
                     }
                 }
-                if(last_msg.equals("default")){
-                    last_msg.setText("");
+                if(theLastMessage.equals("default")){
+                    last_msg.setText("Conversation Deleted");
                 }else{
                     if(isSeen){
-                        if(theLastMessage.equals("default")){
+                        if(theLastMessage.equals("nomsg")){
                             last_msg.setText("Media File");
                         }else{
                             last_msg.setText(theLastMessage);
                         }
                     }else {
 //                        assert firebaseUser != null;
-                        if(theLastMessage.equals("default")){
+                        if(theLastMessage.equals("nomsg")){
                             last_msg.setText("Media File");
                         }else{
                             last_msg.setText(theLastMessage);

@@ -2,8 +2,11 @@ package com.example.chatappdemo.Activities;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -14,14 +17,17 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.chatappdemo.Fragment.ChatsFragment;
+import com.example.chatappdemo.Fragment.GroupFragment;
 import com.example.chatappdemo.Fragment.ProfileFragment;
 import com.example.chatappdemo.Fragment.UsersFragment;
 import com.example.chatappdemo.Model.Chat;
 import com.example.chatappdemo.Model.User;
 import com.example.chatappdemo.R;
+import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -37,16 +43,19 @@ import java.util.HashSet;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     CircleImageView profile_image;
     TextView username;
 
-   // private List<String> usersList;
+    // private List<String> usersList;
     private HashSet<String> arrayListHashSet;
-   // private HashSet<Boolean> booleanHashSetForSeen;
+    // private HashSet<Boolean> booleanHashSetForSeen;
     FirebaseUser firebaseUser;
     DatabaseReference reference;
+
+    private DrawerLayout drawer;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,20 +65,31 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("");
 
+        drawer = findViewById(R.id.drawer_layout);
+
         profile_image = findViewById(R.id.profile_image);
         username = findViewById(R.id.username);
 
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        reference = FirebaseDatabase.getInstance().getReference("Users").child(firebaseUser.getUid());
+        if(firebaseUser != null) {
+            reference = FirebaseDatabase.getInstance().getReference("Users").child(firebaseUser.getUid());
+        }
 
 
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar,
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
 
         reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 User user = dataSnapshot.getValue(User.class);
                 username.setText(user.getUsername());
-                if (user.getImageURL().equals("default")){
+                if (user.getImageURL().equals("default")) {
                     profile_image.setImageResource(R.mipmap.ic_launcher);
                 } else {
 
@@ -113,30 +133,33 @@ public class MainActivity extends AppCompatActivity {
                 ViewPagerAdapter viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
                 int unread = 0;
                 arrayListHashSet.clear();
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()){
-                  //  String sender = String.valueOf(dataSnapshot.child("sender").getValue());
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    //  String sender = String.valueOf(dataSnapshot.child("sender").getValue());
 
                     Chat chat = snapshot.getValue(Chat.class);
-                    if (chat.getReceiver().equals(firebaseUser.getUid()) && !chat.isIsseen()){
-                       // unread++;
-                       arrayListHashSet.add(chat.getSender());
-                      // booleanHashSetForSeen.add(chat.isIsseen());
+                    if (chat.getReceiver().equals(firebaseUser.getUid()) && !chat.isIsseen()) {
+                        // unread++;
+                        arrayListHashSet.add(chat.getSender());
+                        // booleanHashSetForSeen.add(chat.isIsseen());
                     }
                 }
 
-                for(int i = 0;i<arrayListHashSet.size();i++){
+                for (int i = 0; i < arrayListHashSet.size(); i++) {
                     unread++;
                 }
 
-                if (unread == 0){
+                if (unread == 0) {
                     viewPagerAdapter.addFragment(new ChatsFragment(), "Chats");
                 } else {
-                    viewPagerAdapter.addFragment(new ChatsFragment(), "("+unread+") Chats");
+                    viewPagerAdapter.addFragment(new ChatsFragment(), "(" + unread + ") Chats");
                 }
 
-                viewPagerAdapter.addFragment(new UsersFragment(),   "Users");
+                viewPagerAdapter.addFragment(new GroupFragment(),"Groups");
+
+                viewPagerAdapter.addFragment(new UsersFragment(), "Users");
 
                 viewPagerAdapter.addFragment(new ProfileFragment(), "Profile");
+
 
                 viewPager.setAdapter(viewPagerAdapter);
                 tabLayout.setupWithViewPager(viewPager);
@@ -150,12 +173,24 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+        switch (menuItem.getItemId()){
+            case R.id.create_group:
+                finish();
+                startActivity(new Intent(MainActivity.this, CreateGroupActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                break;
+        }
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
     class ViewPagerAdapter extends FragmentPagerAdapter {
 
         private ArrayList<Fragment> fragments;
         private ArrayList<String> titles;
 
-        ViewPagerAdapter(FragmentManager fm){
+        ViewPagerAdapter(FragmentManager fm) {
             super(fm);
             this.fragments = new ArrayList<>();
             this.titles = new ArrayList<>();
@@ -171,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
             return fragments.size();
         }
 
-        public void addFragment(Fragment fragment, String title){
+        public void addFragment(Fragment fragment, String title) {
             fragments.add(fragment);
             titles.add(title);
         }
@@ -186,14 +221,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-
-
-
-
-
-
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu, menu);
@@ -202,9 +229,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
 
-            case  R.id.logout:
+            case R.id.logout:
                 FirebaseAuth.getInstance().signOut();
                 startActivity(new Intent(MainActivity.this, LoginActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                 return true;
@@ -213,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void status(String status){
+    private void status(String status) {
         reference = FirebaseDatabase.getInstance().getReference("Users").child(firebaseUser.getUid());
 
         HashMap<String, Object> hashMap = new HashMap<>();
@@ -233,5 +260,16 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         status("offline");
     }
+
+    @Override
+    public void onBackPressed() {
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+
 
 }
